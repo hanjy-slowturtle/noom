@@ -16,10 +16,10 @@ const ioServer = SocketIO(httpServer);
 ioServer.on("connection", (socket) => {
     socket.on(
         "enter_room",
-        (msg, done) => {
-            console.log(msg);
+        (roomName, done) => {
+            console.log(roomName);
             setTimeout(() => {
-                done();
+                done("Hello, Client!");
             }, 5000);
         }
     );
