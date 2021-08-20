@@ -14,13 +14,15 @@ const httpServer = http.createServer(app);
 const ioServer = SocketIO(httpServer);
 
 ioServer.on("connection", (socket) => {
+    socket.onAny((event) => {
+        console.log(`Socket Event: ${event}`);
+    });
+
     socket.on(
         "enter_room",
         (roomName, done) => {
-            console.log(roomName);
-            setTimeout(() => {
-                done("Hello, Client!");
-            }, 5000);
+            socket.join(roomName);
+            done();
         }
     );
 });
