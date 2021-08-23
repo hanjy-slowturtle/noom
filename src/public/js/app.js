@@ -43,25 +43,28 @@ function showRoom() {
 
 function handleRoomSubmit(event) {
     event.preventDefault();
-    const input = form.querySelector("input");
-    roomName = input.value;
+    const inputRoomName = form.querySelector("#roomName");
+    const inputNickname = form.querySelector("#nickname");
+    roomName = inputRoomName.value;
     socket.emit(
         "enter_room",
         roomName,
+        inputNickname.value,
         showRoom
     );
-    input.value = "";
+    inputRoomName.value = "";
+    inputNickname.value = "";
 }
 
 form.addEventListener("submit", handleRoomSubmit);
 
 
-socket.on("welcome", () => {
-    addMessage("someone joined!");
+socket.on("welcome", (nickname) => {
+    addMessage(`${nickname} joined!`);
 });
 
-socket.on("bye", () => {
-    addMessage("someone left.");
+socket.on("bye", (nickname) => {
+    addMessage(`${nickname} left.`);
 });
 
 socket.on("new_message", addMessage);

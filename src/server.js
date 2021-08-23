@@ -20,19 +20,20 @@ ioServer.on("connection", (socket) => {
 
     socket.on(
         "enter_room",
-        (roomName, done) => {
+        (roomName, nickname, done) => {
             socket.join(roomName);
+            socket["nickname"] = nickname;
             done();
-            socket.to(roomName).emit("welcome");
+            socket.to(roomName).emit("welcome", socket.nickname);
         }
     );
     socket.on("disconnecting", () => {
         socket.rooms.forEach(room => {
-            socket.to(room).emit("bye");
+            socket.to(room).emit("bye", socket.nickname);
         });
     });
     socket.on("new_message", (msg, roomName, done) => {
-        socket.to(roomName).emit("new_message", msg);
+        socket.to(roomName).emit("new_message", `${socket.nickname}: ${msg}`);
         done();
     });
 });
