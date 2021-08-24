@@ -46,10 +46,11 @@ function handleRoomSubmit(event) {
     const inputRoomName = form.querySelector("#roomName");
     const inputNickname = form.querySelector("#nickname");
     roomName = inputRoomName.value;
+    const nickname = inputNickname.value;
     socket.emit(
         "enter_room",
         roomName,
-        inputNickname.value,
+        nickname,
         showRoom
     );
     inputRoomName.value = "";

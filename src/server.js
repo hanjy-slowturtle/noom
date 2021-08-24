@@ -1,6 +1,7 @@
 import http from "http";
 import SocketIO from "socket.io";
 import express from "express";
+import { SIGUNUSED } from "constants";
 
 const app = express();
 
@@ -12,6 +13,26 @@ app.get("/*", (_, res) => res.redirect("/"));
 
 const httpServer = http.createServer(app);
 const ioServer = SocketIO(httpServer);
+
+function getPublicRooms() {
+    const {
+        sockets: {
+            adapter: {
+                sids,
+                rooms
+            }
+        }
+    } = ioServer;
+
+    const publicRooms = [];
+    rooms.forEach((_, key) => {
+        if(sids.get(key) === undefined) {
+            publicRooms.push(key);
+        }
+    });
+
+    return publicRooms;
+}
 
 ioServer.on("connection", (socket) => {
     socket.onAny((event) => {
