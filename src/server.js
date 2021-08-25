@@ -1,7 +1,6 @@
 import http from "http";
 import SocketIO from "socket.io";
 import express from "express";
-import { SIGUNUSED } from "constants";
 
 const app = express();
 
@@ -35,6 +34,8 @@ function getPublicRooms() {
 }
 
 ioServer.on("connection", (socket) => {
+    socket.emit("room_change", getPublicRooms());
+
     socket.onAny((event) => {
         console.log(`Socket Event: ${event}`);
     });
@@ -46,12 +47,16 @@ ioServer.on("connection", (socket) => {
             socket["nickname"] = nickname;
             done();
             socket.to(roomName).emit("welcome", socket.nickname);
+            ioServer.sockets.emit("room_change", getPublicRooms());
         }
     );
     socket.on("disconnecting", () => {
         socket.rooms.forEach(room => {
             socket.to(room).emit("bye", socket.nickname);
         });
+    });
+    socket.on("disconnect", () => {
+        ioServer.sockets.emit("room_change", getPublicRooms());
     });
     socket.on("new_message", (msg, roomName, done) => {
         socket.to(roomName).emit("new_message", `${socket.nickname}: ${msg}`);
