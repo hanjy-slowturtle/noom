@@ -1,90 +1,43 @@
 const socket = io();
 
-const welcome = document.getElementById("welcome");
-const form = welcome.querySelector("form");
-const room = document.getElementById("room");
+const myFace = document.getElementById("myFace");
+const muteBtn = document.getElementById("mute");
+const cameraBtn = document.getElementById("camera");
 
-room.hidden = true;
+let myStream;
+let muted = false;
+let cameraOff = false;
 
-let roomName;
-
-function addMessage(message) {
-    const ul = room.querySelector("ul");
-    const li = document.createElement("li");
-    li.innerText = message;
-    ul.appendChild(li);
+async function getMedia() {
+    try {
+        myStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        });
+        myFace.srcObject = myStream;
+    } catch(e) {
+        console.log(e);
+    }
 }
 
-function handleMessageSubmit(event) {
-    event.preventDefault();
-    const input = room.querySelector("input");
-    const message = input.value;
-    socket.emit(
-        "new_message",
-        message,
-        roomName,
-        () => {
-            addMessage(`You: ${message}`);
-        }
-    );
-    input.value = "";
+getMedia();
+
+function handleMuteClick() {
+    if(!muted) {
+        muteBtn.innerText = "Unmute";
+    } else {
+        muteBtn.innerText = "Mute";
+    }
+    muted = !muted;
+}
+function handleCameraClick() {
+    if(!cameraOff) {
+        cameraBtn.innerText = "Turn Camera On";
+    } else {
+        cameraBtn.innerText = "Turn Camera Off";
+    }
+    cameraOff = !cameraOff;
 }
 
-function showRoom(userCount) {
-    welcome.hidden = true;
-    room.hidden = false;
-
-    setTitle(roomName, userCount);
-
-    const form = room.querySelector("form");
-    form.addEventListener("submit", handleMessageSubmit);
-}
-
-function handleRoomSubmit(event) {
-    event.preventDefault();
-    const inputRoomName = form.querySelector("#roomName");
-    const inputNickname = form.querySelector("#nickname");
-    roomName = inputRoomName.value;
-    const nickname = inputNickname.value;
-    socket.emit(
-        "enter_room",
-        roomName,
-        nickname,
-        showRoom
-    );
-    inputRoomName.value = "";
-    inputNickname.value = "";
-}
-
-function setTitle(roomName, userCount) {
-    const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName} (${userCount})`;
-}
-
-form.addEventListener("submit", handleRoomSubmit);
-
-
-socket.on("welcome", (nickname, userCount) => {
-    addMessage(`${nickname} joined!`);
-    setTitle(roomName, userCount);
-});
-
-socket.on("bye", (nickname, userCount) => {
-    addMessage(`${nickname} left.`);
-    setTitle(roomName, userCount);
-});
-
-socket.on("new_message", addMessage);
-
-socket.on("room_change", (rooms) => {
-    console.log(rooms);
-    const roomCount = welcome.querySelector("span");
-    roomCount.innerText = rooms.length;
-    const roomList = welcome.querySelector("ul");
-    roomList.innerHTML = "";
-    rooms.forEach((room) => {
-        const li = document.createElement("li");
-        li.innerText = room;
-        roomList.append(li);
-    });
-});
+muteBtn.addEventListener("click", handleMuteClick);
+cameraBtn.addEventListener("click", handleCameraClick);
