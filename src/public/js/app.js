@@ -13,9 +13,14 @@ let muted = false;
 let cameraOff = false;
 let roomName;
 let myPeerConnection;
+let myDataChannel;
 
 async function getCameras() {
     try {
+        if(!myStream) {
+            return;
+        }
+
         const devices = await navigator.mediaDevices.enumerateDevices();
         const cameras = devices.filter(device => device.kind === "videoinput");
         const currentCamera = myStream.getVideoTracks()[0];
@@ -56,6 +61,10 @@ async function getMedia(deviceId) {
 }
 
 function handleMuteClick() {
+    if(!myStream) {
+        return;
+    }
+
     myStream.getAudioTracks().forEach((track) => {
         track.enabled = !track.enabled;
     });
@@ -68,6 +77,10 @@ function handleMuteClick() {
 }
 
 function handleCameraClick() {
+    if(!myStream) {
+        return;
+    }
+
     myStream.getVideoTracks().forEach((track) => {
         track.enabled = !track.enabled;
     });
@@ -121,6 +134,9 @@ welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 socket.on("welcome", async () => {
     console.log("someone joined");
+    myDataChannel = myPeerConnection.createDataChannel("chat");
+    myDataChannel.addEventListener("message", console.log);
+    console.log("made data channel");
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
     socket.emit("offer", offer, roomName);
@@ -128,6 +144,10 @@ socket.on("welcome", async () => {
 });
 
 socket.on("offer", async (offer) => {
+    myPeerConnection.addEventListener("datachannel", (event) => {
+        myDataChannel = event.channel;
+        myDataChannel.addEventListener("message", console.log);
+    });
     console.log("received the offer");
     myPeerConnection.setRemoteDescription(offer);
     const answer = await myPeerConnection.createAnswer();
@@ -165,6 +185,11 @@ function makeConnection() {
     });
     myPeerConnection.addEventListener("icecandidate", handleIce);
     myPeerConnection.addEventListener("addstream", handleAddStream);
+    
+    if(!myStream) {
+        return;
+    }
+
     myStream.getTracks().forEach(track => {
         myPeerConnection.addTrack(track, myStream);
     });
@@ -179,3 +204,17 @@ function handleAddStream(data) {
     const peerFace = document.getElementById("peerFace");
     peerFace.srcObject = data.stream;
 }
+
+
+// Chat
+
+const chatForm = document.getElementById("chatForm");
+
+function handleChatSubmit(event) {
+    event.preventDefault();
+    const message = chatForm.querySelector("input");
+    myDataChannel.send(message.value);
+    message.value = "";
+}
+
+chatForm.addEventListener("submit", handleChatSubmit);
